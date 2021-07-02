@@ -17,6 +17,39 @@ from django.conf import settings
 class ImageView(TemplateView):
     # template_name = "detection/main.html"
     form = ImageForm
+    # Enable GPU dynamic memory allocation
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+
+    # PROVIDE PATH TO IMAGE DIRECTORY
+    # IMAGE_PATHS = '/content/drive/MyDrive/training/images/img_test/2.jpg'
+
+    # PROVIDE PATH TO MODEL DIRECTORY
+    PATH_TO_MODEL_DIR = os.path.join(os.getcwd(), 'my_model_faster_rcnn')
+
+    # PROVIDE PATH TO LABEL MAP
+    PATH_TO_LABELS = os.path.join(os.getcwd(), 'my_model_faster_rcnn', 'saved_model',
+                                  'baggage-object-detection.pbtxt')
+
+    # PROVIDE THE MINIMUM CONFIDENCE THRESHOLD
+    MIN_CONF_THRESH = float(0.60)
+
+    # LOAD THE MODEL
+
+    import time
+
+    PATH_TO_SAVED_MODEL = PATH_TO_MODEL_DIR + "/saved_model"
+
+    print('Loading model...', end='')
+    start_time = time.time()
+
+    # LOAD SAVED MODEL AND BUILD DETECTION FUNCTION
+    detect_fn = tf.saved_model.load(PATH_TO_SAVED_MODEL)
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print('Done! Took {} seconds'.format(elapsed_time))
 
     def get(self, *args, **kwargs):
         form = ImageForm()
@@ -26,61 +59,13 @@ class ImageView(TemplateView):
         form = self.form(self.request.POST, self.request.FILES)
         if form.is_valid():
             form.save()
-            # detector = DetectorTF2(
-            #     path_to_checkpoint=os.path.join(os.getcwd(), 'my_model_faster_rcnn',
-            #                                     'saved_model'),
-            #     path_to_labelmap=os.path.join(os.getcwd(),
-            #                                   'my_model_faster_rcnn', 'saved_model', 'baggage-object-detection.pbtxt'))
-            # print(os.getcwd())
-            # print(Path.cwd())
-            # print(Path.cwd() / form.instance.image.url)
-            # print(os.path.join(os.getcwd(), form.instance.image.url))
-            # print('===============')
             img_obj = form.instance
-            # print(img_obj.image.url)
-            # print(img_obj)
-            # det_boxes = detector.DetectFromImage(img=form.instance.image.url)
-            # img = detector.DisplayDetections(boxes_list=det_boxes, image=form.instance.image.url)
-            # img = form.image
-            # Enable GPU dynamic memory allocation
-            gpus = tf.config.experimental.list_physical_devices('GPU')
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
 
-            # PROVIDE PATH TO IMAGE DIRECTORY
-            # IMAGE_PATHS = '/content/drive/MyDrive/training/images/img_test/2.jpg'
-
-            # PROVIDE PATH TO MODEL DIRECTORY
-            PATH_TO_MODEL_DIR = os.path.join(os.getcwd(), 'my_model_faster_rcnn')
-
-            # PROVIDE PATH TO LABEL MAP
-            PATH_TO_LABELS = os.path.join(os.getcwd(), 'my_model_faster_rcnn', 'saved_model',
-                                          'baggage-object-detection.pbtxt')
-
-            # PROVIDE THE MINIMUM CONFIDENCE THRESHOLD
-            MIN_CONF_THRESH = float(0.60)
-
-            # LOAD THE MODEL
-
-            import time
+            # LOAD LABEL MAP DATA FOR PLOTTING
             from object_detection.utils import label_map_util
             from object_detection.utils import visualization_utils as viz_utils
 
-            PATH_TO_SAVED_MODEL = PATH_TO_MODEL_DIR + "/saved_model"
-
-            print('Loading model...', end='')
-            start_time = time.time()
-
-            # LOAD SAVED MODEL AND BUILD DETECTION FUNCTION
-            detect_fn = tf.saved_model.load(PATH_TO_SAVED_MODEL)
-
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            print('Done! Took {} seconds'.format(elapsed_time))
-
-            # LOAD LABEL MAP DATA FOR PLOTTING
-
-            category_index = label_map_util.create_category_index_from_labelmap(PATH_TO_LABELS,
+            category_index = label_map_util.create_category_index_from_labelmap(self.PATH_TO_LABELS,
                                                                                 use_display_name=True)
 
             import numpy as np
@@ -117,7 +102,7 @@ class ImageView(TemplateView):
             input_tensor = input_tensor[tf.newaxis, ...]
 
             # input_tensor = np.expand_dims(image_np, 0)
-            detections = detect_fn(input_tensor)
+            detections = self.detect_fn(input_tensor)
 
             # All outputs are batches tensors.
             # Convert to numpy arrays, and take index [0] to remove the batch dimension.
@@ -141,7 +126,9 @@ class ImageView(TemplateView):
                 category_index,
                 use_normalized_coordinates=True,
                 max_boxes_to_draw=200,
-                min_score_thresh=0.5,
+                min_score_thresh=0.25,
+                line_thickness=2,
+                skip_scores=False,
                 agnostic_mode=False)
 
             print('Done')
