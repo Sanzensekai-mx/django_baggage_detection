@@ -11,6 +11,7 @@ sys.path.append(os.path.abspath('..'))
 
 urlpatterns = [
     path('', views.ImageView.as_view(), name='main'),
+    path('about', views.about, name='about'),
 ]
 # print(MEDIA_ROOT)
 # if DEBUG:

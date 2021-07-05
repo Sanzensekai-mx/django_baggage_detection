@@ -1,0 +1,21 @@
+{% extends 'detection/main.html' %}
+
+{% block main %}
+<section class="info-container">
+        <form method="post" enctype="multipart/form-data" class="form-inline">
+        {% csrf_token %}
+        {% for field in form %}
+
+            <section class="form-img">{{ field.label_tag }} {{ field }}</section>
+        {% endfor %}
+        <button class="btn btn-primary mb-2" type="submit">Загрузить</button>
+        </form>
+    </section>
+    {% if img_obj %}
+        <h3 class="success-text">Succesfully uploaded</h3>
+        <section class="img-block">
+            <img src="{{ img_obj.image.url}}" alt="connect">
+            <img src="{{ new_img }}" alt="connect">
+        </section>
+    {% endif %}
+{% endblock %}

@@ -14,6 +14,10 @@ from pathlib import Path
 from django.conf import settings
 
 
+def about(request):
+    return render(request, 'detection/about.html')
+
+
 class ImageView(TemplateView):
     # template_name = "detection/main.html"
     form = ImageForm
@@ -53,7 +57,7 @@ class ImageView(TemplateView):
 
     def get(self, *args, **kwargs):
         form = ImageForm()
-        return render(self.request, 'detection/main.html', {'form': form})
+        return render(self.request, 'detection/detection.html', {'form': form})
 
     def post(self, *args, **kwargs):
         form = self.form(self.request.POST, self.request.FILES)
@@ -138,5 +142,5 @@ class ImageView(TemplateView):
             print(img_path)
             cv2.imwrite(img=image_with_detections,
                         filename=f"{settings.MEDIA_ROOT}/images/labeled_{form.instance.image.name.split('/')[-1]}")
-            return render(self.request, 'detection/main.html', {'form': form, 'img_obj': img_obj, 'new_img': img_path})
+            return render(self.request, 'detection/detection.html', {'form': form, 'img_obj': img_obj, 'new_img': img_path})
             # return render(self.request, 'detection/main.html', {'form': form, 'img': img})
